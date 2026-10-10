@@ -564,11 +564,19 @@
   </div>
 
   <script>
+    const DEMO_MODE = new URLSearchParams(location.search).get('demo') === '1';
+    if (DEMO_MODE) {
+      const notice = document.createElement('div');
+      notice.setAttribute('role', 'status');
+      notice.textContent = 'وضع تجريبي — بيانات نموذجية، إرسال الطلبات معطّل';
+      notice.style.cssText = 'background:#fff3cd;color:#513d00;padding:12px;text-align:center;font-weight:bold;position:relative;z-index:1001';
+      document.body.prepend(notice);
+    }
     /* =========================
        CONFIG (Your two CSV links)
        ========================= */
-    const CATEGORIES_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBHfoe4ryjWV5V4pTyz8NkgeBOaWDLZRWYcbmF9Ndiq6rmiTcTvPj3Y6Q-pPUzGNdGIww3iitAa_Jm/pub?gid=0&single=true&output=csv";
-    const PRODUCTS_URL   = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBHfoe4ryjWV5V4pTyz8NkgeBOaWDLZRWYcbmF9Ndiq6rmiTcTvPj3Y6Q-pPUzGNdGIww3iitAa_Jm/pub?gid=298667236&single=true&output=csv";
+    const CATEGORIES_URL = DEMO_MODE ? "demo/categories.csv" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBHfoe4ryjWV5V4pTyz8NkgeBOaWDLZRWYcbmF9Ndiq6rmiTcTvPj3Y6Q-pPUzGNdGIww3iitAa_Jm/pub?gid=0&single=true&output=csv";
+    const PRODUCTS_URL   = DEMO_MODE ? "demo/products.csv" : "https://docs.google.com/spreadsheets/d/e/2PACX-1vRBHfoe4ryjWV5V4pTyz8NkgeBOaWDLZRWYcbmF9Ndiq6rmiTcTvPj3Y6Q-pPUzGNdGIww3iitAa_Jm/pub?gid=298667236&single=true&output=csv";
 
     const WA_NUMBER = "972569541101"; // without +
 
@@ -577,7 +585,7 @@
        ========================= */
     let categories = [];
     let allProducts = [];
-    let cart = JSON.parse(localStorage.getItem("myCart")) || [];
+    let cart = JSON.parse(localStorage.getItem((DEMO_MODE ? "myCartDemo" : "myCart"))) || [];
 
     let currentList = [];
     let currentPage = 1;
@@ -668,7 +676,7 @@
       grid.innerHTML = categories.map(cat => {
         const count = allProducts.filter(p => p.category_id === String(cat.id)).length;
         return `
-          <div class="cat-card" onclick="openCategory('${escapeAttr(cat.id)}', '${escapeAttr(cat.name)}')">
+          <div class="cat-card" onclick="openCategory(${inlineArg(cat.id)}, ${inlineArg(cat.name)})">
             <div class="cat-top">
               <div class="cat-icon">
                 ${cat.img ? `<img src="${escapeAttr(cat.img)}" alt="cat">` : `<i class="fa-solid fa-box"></i>`}
@@ -742,7 +750,7 @@
       chips.style.display = "flex";
       const allChip = `<button class="chip ${currentSub==="ALL"?"active":""}" onclick="setSub('ALL')">الكل</button>`;
       const subChips = subs.map(s =>
-        `<button class="chip ${currentSub===s?"active":""}" onclick="setSub('${escapeAttr(s)}')">${escapeHtml(s)}</button>`
+        `<button class="chip ${currentSub===s?"active":""}" onclick="setSub(${inlineArg(s)})">${escapeHtml(s)}</button>`
       ).join("");
 
       chips.innerHTML = allChip + subChips;
@@ -812,7 +820,7 @@
       pageItems.forEach(p => {
         const out = p.stock <= 0;
         grid.innerHTML += `
-          <div class="product-card" onclick="openProductModal('${escapeAttr(p.id)}')">
+          <div class="product-card" onclick="openProductModal(${inlineArg(p.id)})">
             <div class="p-img-container">
               <img class="p-img" src="${escapeAttr(p.img || 'placeholder.jpg')}" alt="product" loading="lazy">
               <div class="pill ${out ? 'out' : 'ok'}">${out ? 'نفذت الكمية' : 'متوفر'}</div>
@@ -822,7 +830,7 @@
               <div class="p-row">
                 <div class="p-price">${formatPrice(p.price)} ₪</div>
                 <button class="add-mini" ${out ? "disabled" : ""} title="أضف للسلة"
-                  onclick="event.stopPropagation(); quickAdd('${escapeAttr(p.id)}');">+</button>
+                  onclick="event.stopPropagation(); quickAdd(${inlineArg(p.id)});">+</button>
               </div>
             </div>
           </div>
@@ -913,7 +921,7 @@
     }
 
     function saveCart(){
-      localStorage.setItem("myCart", JSON.stringify(cart));
+      localStorage.setItem((DEMO_MODE ? "myCartDemo" : "myCart"), JSON.stringify(cart));
       updateCartBadge();
     }
 
@@ -981,6 +989,7 @@
        CHECKOUT -> WHATSAPP
        ========================= */
     function checkoutWhatsApp(){
+      if (DEMO_MODE) return alert("وضع تجريبي: لم يتم إرسال أي طلب.");
       if(!cart.length) return alert("السلة فارغة!");
 
       const name = (document.getElementById("cName").value || "").trim();
@@ -1028,6 +1037,8 @@
         .replaceAll("'","&#039;");
     }
     function escapeAttr(str){ return escapeHtml(str).replaceAll("`","&#096;"); }
+
+    function inlineArg(value){ return escapeAttr(JSON.stringify(String(value))); }
 
     function formatPrice(n){
       const x = Number(n) || 0;
