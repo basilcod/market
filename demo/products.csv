@@ -1,0 +1,4 @@
+id,name,price,description,image,stock,category_id,sub_category
+demo-1,قهوة,20,منتج نموذجي للعرض فقط,demo/product.svg,10,drinks,ساخنة
+demo-2,شاي,12,منتج نموذجي للعرض فقط,demo/product.svg,6,drinks,ساخنة
+demo-3,أرز,18,منتج نموذجي للعرض فقط,demo/product.svg,0,food,حبوب
